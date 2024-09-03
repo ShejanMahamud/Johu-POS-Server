@@ -1,7 +1,9 @@
+import cors from 'cors';
 import dotenv from "dotenv";
 import express from "express";
-import { connectDB } from "./db/connectDB";
-import { logReqRes } from "./middlewares/logReqRes";
+import { connectDB } from "./db/connectDB.js";
+import { logReqRes } from "./middlewares/index.js";
+import UserRouter from "./routes/user.js";
 
 dotenv.config();
 
@@ -16,10 +18,11 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 app.use(logReqRes("log.txt"));
 
-app.get((req, res) => {
+app.use("/auth/users", UserRouter);
+
+app.get('/', (req, res) => {
   res.send({
     status: 200,
     success: true,
@@ -33,25 +36,23 @@ app.use((req, res, next) => {
   next(error);
 });
 
-app.use((error,req, res, next) => {
-    console.log(error)
+app.use((error, req, res, next) => {
+    console.log(error);
     res.status(error.status || 500).send({
-        status: 500,
+        status: error.status || 500,
         success: false,
         message: error.message || "Internal Server Error"
-    })
+    });
 });
 
-//start the server using IIFE function
 (async () => {
-    try{
+    try {
         await connectDB(process.env.MONGO_URI);
         app.listen(PORT, () =>
           console.log("APP RUNNING ON PORT:", PORT)
         );
-    }
-    catch(error){
+    } catch (error) {
         console.error("Failed to Start the Server: ", error);
         process.exit(1);
     }
-})()
+})();
